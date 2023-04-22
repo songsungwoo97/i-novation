@@ -2,6 +2,7 @@ package com.example.inovation.controller;
 
 import com.example.inovation.domain.News;
 import com.example.inovation.service.NewsService;
+import com.example.inovation.service.form.NewsForm;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,7 +18,7 @@ public class NewsController {
     private final NewsService newsService;
 
     @GetMapping("/news")
-    public List<News> news() throws Exception{
+    public List<NewsForm> news() throws Exception{
         return newsService.NaverNewsCrawler();
     }
 }

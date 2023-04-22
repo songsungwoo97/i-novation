@@ -2,6 +2,7 @@ package com.example.inovation.service;
 
 import com.example.inovation.domain.News;
 import com.example.inovation.repository.NewsRepository;
+import com.example.inovation.service.form.NewsForm;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -24,12 +25,12 @@ public class NewsService {
     private final NewsRepository newsRepository;
 
     @Transactional
-    public List<News> NaverNewsCrawler() throws IOException {
+    public List<NewsForm> NaverNewsCrawler() throws IOException {
 
         String URL = "https://news.naver.com/main/ranking/popularDay.naver";
         Document doc = Jsoup.connect(URL).get();
 
-        List<News> newsList = new ArrayList<>();
+        List<NewsForm> newsList = new ArrayList<>();
 
         Elements elements = doc.select("div.rankingnews_box > ul > li");
         //Elements contents = doc.getElementsByAttributeValue("class", "rankingnews_box_wrap _popularRanking");
@@ -40,7 +41,8 @@ public class NewsService {
             String url = element.select("a.list_title").attr("href");
             String image = element.select("a.list_img > img").attr("src");
 
-            News news = new News(title, url, image);
+            NewsForm news = new NewsForm(title, url, image);
+
 
             //newsRepository.save(news);
             newsList.add(news);
