@@ -1,6 +1,7 @@
 package com.example.inovation.service;
 
 import com.example.inovation.domain.News;
+import com.example.inovation.service.form.NewsForm;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ class NewsServiceTest {
 
     @Test
     public void crawling() throws IOException {
-        List<News> newsList = newsService.NaverNewsCrawler();
+        List<NewsForm> newsList = newsService.NaverNewsCrawler();
 
         System.out.println(newsList.size());
     }
