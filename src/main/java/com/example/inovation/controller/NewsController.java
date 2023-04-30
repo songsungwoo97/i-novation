@@ -31,10 +31,10 @@ public class NewsController {
     }
 
     //뉴스 기사 검색
-    @GetMapping("/search")
+    @PostMapping("/search")
     public ResponseEntity<List<String>> newsSearch(@RequestBody NewsSearchForm form) {
         List<String> newsList = newsService.search(form.getKeyword());
-        if (newsList != null && !newsList.isEmpty()) {
+        if (!newsList.isEmpty()) {
             return ResponseEntity.ok(newsList);
         } else {
             System.out.println("결과가 없습니다.");
