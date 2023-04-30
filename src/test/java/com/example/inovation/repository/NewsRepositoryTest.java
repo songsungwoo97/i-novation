@@ -1,33 +1,25 @@
-package com.example.inovation.service;
+package com.example.inovation.repository;
 
 import com.example.inovation.domain.News;
-import com.example.inovation.repository.NewsRepository;
-import com.example.inovation.service.form.NewsForm;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.IOException;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-class NewsServiceTest {
-
-    @Autowired
-    private NewsService newsService;
+class NewsRepositoryTest {
 
     @Autowired
     private NewsRepository newsRepository;
 
     @Test
-    public void crawling() throws IOException {
-        List<NewsForm> newsList = newsService.naverNewsCrawler();
+    public void 저장() {
+        News news = new News("fsd", "fsdfs", "sdfds");
 
-        System.out.println(newsList.size());
+        newsRepository.save(news);
     }
 }

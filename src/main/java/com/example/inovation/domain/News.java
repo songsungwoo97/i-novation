@@ -8,6 +8,7 @@ import lombok.*;
 
 @Entity
 @ToString
+@NoArgsConstructor
 @Getter @Setter
 public class News {
 
@@ -19,15 +20,9 @@ public class News {
     private String url;
     private String image;
 
+    @Builder
     public News(String title, String url, String image) {
 
-        this.title = title;
-        this.url = url;
-        this.image = image;
-    }
-
-    public News(Long id, String title, String url, String image) {
-        this.id = id;
         this.title = title;
         this.url = url;
         this.image = image;
