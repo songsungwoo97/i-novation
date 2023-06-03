@@ -19,6 +19,7 @@ public class News {
     private String title;
     private String url;
     private String image;
+    //private String category; //Query로 처리해주기
 
     @Builder
     public News(String title, String url, String image) {
