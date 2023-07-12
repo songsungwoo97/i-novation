@@ -3,8 +3,11 @@ package com.example.inovation.service;
 import com.example.inovation.service.Error.NewsApiException;
 import com.example.inovation.service.form.ArticleForm;
 import com.fasterxml.jackson.databind.JsonNode;
+<<<<<<< HEAD
 import com.google.cloud.speech.v1.*;
 import com.google.cloud.speech.v1.RecognitionConfig.AudioEncoding;
+=======
+>>>>>>> origin/master
 import com.google.cloud.texttospeech.v1.*;
 import com.google.protobuf.ByteString;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +23,10 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+<<<<<<< HEAD
 import org.springframework.web.multipart.MultipartFile;
+=======
+>>>>>>> origin/master
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -103,9 +109,13 @@ public class NewsService {
         return imageElement != null ? imageElement.attr("content") : "";
     }
 
+<<<<<<< HEAD
     /*#################################################################################################*/
 
 //TTS 구현
+=======
+/*#################################################################################################*/
+>>>>>>> origin/master
 
     public String crawlNewsBody(String url) {
         try {
@@ -139,7 +149,11 @@ public class NewsService {
                         .build();
 
                 AudioConfig audioConfig = AudioConfig.newBuilder() //오디오의 인코딩 형식을 지정
+<<<<<<< HEAD
                         .setAudioEncoding(com.google.cloud.texttospeech.v1.AudioEncoding.MP3)
+=======
+                        .setAudioEncoding(AudioEncoding.MP3)
+>>>>>>> origin/master
                         .build();
 
                 SynthesisInput input = SynthesisInput.newBuilder() //TTS엔진에 전달할 텍스트입력 설정
@@ -192,6 +206,7 @@ public class NewsService {
 
         return chunks;
     }
+<<<<<<< HEAD
     /*#################################################################################################*/
 
     //음성인식 구현
@@ -234,3 +249,7 @@ public class NewsService {
         }
     }
 }
+=======
+
+}
+>>>>>>> origin/master

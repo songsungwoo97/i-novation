@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://i-novation.cvkt2esm45yw.ap-northeast-2.rds.amazonaws.com:3306/i_novation
+    username: song
+    password: snrn0412
+    driver-Class-Name: org.mariadb.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+naver:
+  api:
+    clientId: 5_6vnGOcaeUbwJbdyF1q
+    clientSecret: s034WsHYTi
