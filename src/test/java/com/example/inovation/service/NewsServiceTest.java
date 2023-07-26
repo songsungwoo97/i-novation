@@ -1,17 +1,13 @@
 package com.example.inovation.service;
 
-<<<<<<< HEAD
 import com.google.cloud.speech.v1.*;
 import com.google.protobuf.ByteString;
-=======
->>>>>>> origin/master
 import javazoom.jl.player.Player;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-<<<<<<< HEAD
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -20,12 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
-=======
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
->>>>>>> origin/master
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 class NewsServiceTest {
@@ -34,7 +26,6 @@ class NewsServiceTest {
     private NewsService newsService;
 
     @Test
-<<<<<<< HEAD
     public void STT() throws IOException {
         Path path = Paths.get("C:/Users/USER_20211214/Desktop/test.flac"); // 음성 파일의 경로를 지정합니다.
 
@@ -77,8 +68,6 @@ class NewsServiceTest {
     }
 
     @Test
-=======
->>>>>>> origin/master
     public void TTS() throws IOException {
         String text = "안녕";
         byte[] bytes = newsService.synthesizeText(text);
@@ -122,9 +111,5 @@ class NewsServiceTest {
             e.printStackTrace();
         }
     }
-<<<<<<< HEAD
 
-
-=======
->>>>>>> origin/master
 }

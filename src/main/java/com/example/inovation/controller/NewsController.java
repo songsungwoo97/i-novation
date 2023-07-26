@@ -7,10 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-<<<<<<< HEAD
 import org.springframework.web.multipart.MultipartFile;
-=======
->>>>>>> origin/master
 
 import java.io.IOException;
 import java.util.List;
@@ -25,7 +22,6 @@ public class NewsController {
     private final NewsService newsService;
 
     @PostMapping("/search")
-<<<<<<< HEAD
     public ResponseEntity<List<ArticleForm>> newsSearch(@RequestParam("file") MultipartFile file) throws IOException {
         //STT 추가하기
 
@@ -33,10 +29,6 @@ public class NewsController {
         String keword = newsService.speechKeyword(file);
 
         List<ArticleForm> newsList = newsService.searchNaverNews(keword, 20);
-=======
-    public ResponseEntity<List<ArticleForm>> newsSearch(@RequestBody NewsSearchForm form) throws IOException {
-        List<ArticleForm> newsList = newsService.searchNaverNews(form.getKeyword(), 20);
->>>>>>> origin/master
         if (!newsList.isEmpty()) {
             return ResponseEntity.ok(newsList);
         } else {
