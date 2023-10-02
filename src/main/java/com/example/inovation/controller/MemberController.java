@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
-//@CrossOrigin(origins = "http://localhost:3000") //CORS ERROR 해결
+@CrossOrigin(origins = "http://localhost:3000") //CORS ERROR 해결
+
 public class MemberController {
 
     private final MemberService memberService;

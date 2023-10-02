@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +32,9 @@ public class NewsController {
     private final NewsService newsService;
 
 /*    @PostMapping("/search")
+=======
+    @PostMapping("/search")
+>>>>>>> d96e2faa6f6ba71ee628d45a99ffd74d6308a226
     public ResponseEntity<List<ArticleForm>> newsSearch(@RequestParam("file") MultipartFile file) throws IOException {
         //STT 추가하기
 
@@ -43,6 +49,7 @@ public class NewsController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
+<<<<<<< HEAD
 */
     @PostMapping("/popularnews")
     public ResponseEntity<List<NewsForm>> popularNews() throws IOException {
@@ -131,6 +138,9 @@ public class NewsController {
             Resource resource = new UrlResource(filePath.toUri()); //uri 생성
 
             return ResponseEntity.ok().body(resource);
+            // 오디오를 바이트 배열로 반환
+            //return new ResponseEntity<>(sound, headers, HttpStatus.OK);
+            //return ResponseEntity.ok(sound);
 
         } catch (IOException e) {
             e.printStackTrace();

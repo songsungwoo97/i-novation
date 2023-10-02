@@ -5,7 +5,6 @@ import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.speech.v1.*;
 import com.google.cloud.speech.v1.RecognitionConfig.AudioEncoding;
 
@@ -26,12 +25,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.reactive.function.client.WebClient;
 
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 
@@ -50,6 +50,7 @@ public class NewsService {
 
     private final RestTemplate restTemplate; // api 사용을 위해 deprecated
     //private final WebClient webClient;
+
 
     @Configuration
     public static class RestTemplateConfig {
@@ -135,18 +136,14 @@ public class NewsService {
         return form;
     }
 
-/*#################################################################################################*/
 
 //TTS 구현
-
-/*#################################################################################################*/
-
-
     public String crawlNewsBody(String url) {
         try {
             Document doc = Jsoup.connect(url).get();
 
             Elements newsBodyElements = doc.select("article.go_trans._article_content");
+
 
             // 사진설명 제거
             newsBodyElements.select(".end_photo_org").remove();
@@ -242,6 +239,7 @@ public byte[] synthesizeText(String text) throws IOException {
     return mergeAudioData(audioDataList);
 }
 */
+
 
     private byte[] mergeAudioData(List<byte[]> audioDataList) throws IOException {//음성 데이터를 List에서 하나의 배열로 병합
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -361,4 +359,3 @@ public byte[] synthesizeText(String text) throws IOException {
     }
 */
 }
-

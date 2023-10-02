@@ -37,4 +37,8 @@ out/
 .vscode/
 
 ### yml ###
+<<<<<<< HEAD
 #src/main/resources/application.yml
+=======
+src/main/resources/application.yml
+>>>>>>> d96e2faa6f6ba71ee628d45a99ffd74d6308a226
