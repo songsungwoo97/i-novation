@@ -1,21 +1,28 @@
 package com.example.inovation.service;
 
-import com.google.cloud.speech.v1.*;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.speech.v1p1beta1.*;
 import com.google.protobuf.ByteString;
 import javazoom.jl.player.Player;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -25,8 +32,8 @@ class NewsServiceTest {
     private NewsService newsService;
 
     @Test
-    public void STT() throws IOException {
-        Path path = Paths.get("C:/Users/USER_20211214/Desktop/test.flac"); // 음성 파일의 경로를 지정합니다.
+    public void STT_MP3() throws IOException {
+        Path path = Paths.get("C:/Users/USER_20211214/Desktop/test.mp3"); // 음성 파일의 경로를 지정합니다.
 
         String resultText = "";
 
@@ -39,10 +46,9 @@ class NewsServiceTest {
 
             //음성 인식 요청의 구성을 설정(오디오 인코딩, 언어 코드, 샘플 레이트 등)
             RecognitionConfig config = RecognitionConfig.newBuilder()
-                    .setEncoding(RecognitionConfig.AudioEncoding.FLAC)
+                    .setEncoding(RecognitionConfig.AudioEncoding.MP3)
                     .setLanguageCode("ko-KR")
-                    .setSampleRateHertz(48000) //샘플링 레이트 맞추기
-                    .setAudioChannelCount(2) //채널 수 맞추기
+                    .setSampleRateHertz(44100) //샘플링 레이트 맞추기
                     .build();
 
             //음성 인식 요청에 사용할 오디오 데이터를 설정
@@ -55,16 +61,70 @@ class NewsServiceTest {
 
             List<SpeechRecognitionResult> results = response.getResultsList();
 
-            for (SpeechRecognitionResult result : results) {
-                //가장 근접한 값을 저장
-                SpeechRecognitionAlternative alternative = result.getAlternativesList().get(0);
-                resultText += alternative.getTranscript();
+            if (!response.getResultsList().isEmpty()) {
+                resultText = response.getResultsList().get(0).getAlternativesList().get(0).getTranscript();
             }
             System.out.println(resultText);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    @Test
+    public void STT_REST() throws IOException {
+        Path path = Paths.get("C:/Users/USER_20211214/Desktop/test.mp3");
+
+        String resultText = "";
+
+        String apiKey = "AIzaSyD4aQkvI-_O9flNES20RTR3UYzgJDNKoAw";
+        try {
+            // 요청을 보낼 URL 생성
+            String url = String.format("https://speech.googleapis.com/v1p1beta1/speech:recognize?key=%s", apiKey);
+
+            // 음성 파일을 바이트 코드로 변환
+            byte[] audioBytes = Files.readAllBytes(path);
+            String base64Audio = Base64.getEncoder().encodeToString(audioBytes);
+
+            // JSON 요청 본문 생성
+            Map<String, Object> audioConfigMap = new HashMap<>();
+            audioConfigMap.put("encoding", "MP3");
+            audioConfigMap.put("languageCode", "ko-KR");
+            audioConfigMap.put("sampleRateHertz", 44100);
+
+            Map<String, Object> audioMap = new HashMap<>();
+            audioMap.put("content", base64Audio);
+
+            Map<String, Object> requestMap = new HashMap<>();
+            requestMap.put("config", audioConfigMap);
+            requestMap.put("audio", audioMap);
+
+            // RestTemplate을 사용하여 HTTP POST 요청 보내기
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestMap, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+            // 응답 JSON 파싱하여 결과 텍스트 얻기
+            if (response.getStatusCode() == HttpStatus.OK) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonResponse = objectMapper.readTree(response.getBody());
+                JsonNode results = jsonResponse.get("results");
+
+                if (results.isArray() && results.size() > 0) {
+                    JsonNode alternatives = results.get(0).get("alternatives");
+                    if (alternatives.isArray() && alternatives.size() > 0) {
+                        resultText = alternatives.get(0).path("transcript").asText();
+                    }
+                }
+            }
+            System.out.println(resultText);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Test
     public void TTS() throws IOException {

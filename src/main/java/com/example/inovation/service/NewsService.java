@@ -4,12 +4,12 @@ import com.example.inovation.service.Error.NewsApiException;
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import com.google.cloud.speech.v1.*;
-import com.google.cloud.speech.v1.RecognitionConfig.AudioEncoding;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.speech.v1p1beta1.*;
 import com.google.cloud.texttospeech.v1.*;
 import com.google.protobuf.ByteString;
+import com.google.cloud.speech.v1p1beta1.RecognitionConfig.AudioEncoding;
+
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -23,15 +23,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-
 import org.springframework.web.multipart.MultipartFile;
-
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -48,8 +44,8 @@ public class NewsService {
 
     //private final NewsRepository newsRepository;
 
-    private final RestTemplate restTemplate; // api 사용을 위해 deprecated
-    //private final WebClient webClient;
+    private final RestTemplate restTemplate;
+    //private final WebClient webClient; //RestTemplate 대신 사용하기
 
 
     @Configuration
@@ -60,6 +56,7 @@ public class NewsService {
         }
     }
 
+    //뉴스검색 api를 사용하여
     @Transactional
     public List<ArticleForm> searchNaverNews(String query, int size) throws IOException {
         // news_office_code를 추가하여 네이버 뉴스 기사만 검색합니다.
@@ -108,29 +105,33 @@ public class NewsService {
         return imageElement != null ? imageElement.attr("content") : "";
     }
 
+    //인기뉴스 크롤링
     public List<NewsForm> getPopularNews() throws IOException {
 
+        //구글 뉴스
         List<NewsForm> form = new ArrayList<>();
 
-        Document doc = Jsoup.connect("https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFZxYUdjU0FtdHZHZ0pMVWlnQVAB?hl=ko&gl=KR&ceid=KR%3Ako").get();
+        Document doc = Jsoup.connect("https://news.naver.com/main/ranking/popularDay.naver").get();
+        Elements newsElements = doc.select(".rankingnews_box_wrap ._officeCard .rankingnews_box");
 
-        Elements elements = doc.select("div.afJ4ge c-wiz");
+        // 각 뉴스 제목과 링크를 출력합니다.
+        for (Element newsElement : newsElements) {
 
-        for(Element element : elements) {
-            System.out.println("element" + element);
-        }
+            Elements listElements = newsElement.select("ul.rankingnews_list");
 
-        for(Element element : elements) {
-            String title = element.select("h4.gPFEn").text();
-            String link = element.select("a.WwrzSb").attr("abs:href");
-            String thumbnail = element.select("img").attr("src");
+            for (Element listElement : listElements) {
+                Element linkElement = listElement.select(".list_content a.list_title").first();
 
-            System.out.println("title: " + title);
-            System.out.println("link: " + link);
-            System.out.println("thumbnail: " + thumbnail);
+                String title = linkElement.text();
+                title = Jsoup.clean(title, Safelist.none()); //HTML 태그 정리
 
-            NewsForm articleForm = new NewsForm(title, link, thumbnail); // description은 예시로 비워 둠.
-            form.add(articleForm);
+                String link = linkElement.attr("href");
+                Element thumbnailElement = listElement.select("a.list_img img").first();
+
+                String url = thumbnailElement != null ? thumbnailElement.attr("src") : "no thumbnail";
+
+                form.add(new NewsForm(title, link, url));
+            }
         }
 
         return form;
@@ -143,7 +144,6 @@ public class NewsService {
             Document doc = Jsoup.connect(url).get();
 
             Elements newsBodyElements = doc.select("article.go_trans._article_content");
-
 
             // 사진설명 제거
             newsBodyElements.select(".end_photo_org").remove();
@@ -172,7 +172,6 @@ public class NewsService {
 
                 AudioConfig audioConfig = AudioConfig.newBuilder() //오디오의 인코딩 형식을 지정
                         .setAudioEncoding(com.google.cloud.texttospeech.v1.AudioEncoding.MP3)
-                        .setAudioEncoding(com.google.cloud.texttospeech.v1.AudioEncoding.MP3)
                         .build();
 
                 SynthesisInput input = SynthesisInput.newBuilder() //TTS엔진에 전달할 텍스트입력 설정
@@ -183,9 +182,9 @@ public class NewsService {
                 ByteString audioData = response.getAudioContent(); //오디오 데이터를 가져옴
                 audioDataList.add(audioData.toByteArray());
 
-                client.shutdown(); //기존 호출은 계속되지만 새로운 호출은 허용되지 않는 정돈된 종료를 시작합니다.
+                client.shutdown();
                 try {
-                    if (!client.awaitTermination(800, TimeUnit.MILLISECONDS)) { //이 메소드는 채널이 종료될 때까지 블록하며, 시간 제한이 도달하면 포기합니다.
+                    if (!client.awaitTermination(800, TimeUnit.MILLISECONDS)) { //시간 제한이 도달하면 포기
                         System.out.println("Timeout");
                         client.shutdownNow(); //기존 호출과 새로운 호출이 취소되는 강제 종료를 시작합니다.
                     }
@@ -207,8 +206,7 @@ public byte[] synthesizeText(String text) throws IOException {
     List<String> textChunk = splitTextIntoChunks(text, maxTextLength);
     List<byte[]> audioDataList = new ArrayList<>();
 
-    String apiKey = "AIzaSyD4aQkvI-_O9flNES20RTR3UYzgJDNKoAw"; // 실제 API 키로 교체해주세요.
-
+    String apiKey = "AIzaSyD4aQkvI-_O9flNES20RTR3UYzgJDNKoAw";
     for (String chunk : textChunk) {
         try {
             String url = String.format("https://texttospeech.googleapis.com/v1/text:synthesize?key=%s", apiKey);
@@ -264,13 +262,15 @@ public byte[] synthesizeText(String text) throws IOException {
     }
     /*#################################################################################################*/
 
+
     //음성인식 구현
+    /*
     public String speechKeyword(MultipartFile file) {
 
         String resultText = "";
 
         try {
-            //SpeechClient인스턴스 생성
+            //클라이언트 인스턴스화
             SpeechClient speechClient = SpeechClient.create();
 
             //음성파일을 바이트코드로 변환
@@ -278,9 +278,9 @@ public byte[] synthesizeText(String text) throws IOException {
 
             //음성 인식 요청의 구성을 설정(오디오 인코딩, 언어 코드, 샘플 레이트 등)
             RecognitionConfig config = RecognitionConfig.newBuilder()
-                    .setEncoding(AudioEncoding.LINEAR16)
+                    .setEncoding(AudioEncoding.MP3)
                     .setLanguageCode("ko-KR")
-                    .setSampleRateHertz(16000)
+                    .setSampleRateHertz(44100)
                     .build();
 
             //음성 인식 요청에 사용할 오디오 데이터를 설정
@@ -303,20 +303,22 @@ public byte[] synthesizeText(String text) throws IOException {
             throw new RuntimeException(e);
         }
     }
-
-    /*
-    public String speechKeyword(MultipartFile file) {
+*/
+/*
+    //매개변수 : 바이트코드
+    public String speechKeyword(byte[] word) {
         String resultText = "";
         String apiKey = "AIzaSyD4aQkvI-_O9flNES20RTR3UYzgJDNKoAw";
         try {
+            //요청을 보낼 url 생성
             String url = String.format("https://speech.googleapis.com/v1/speech:recognize?key=%s", apiKey);
 
             // 음성 파일을 바이트 코드로 변환
-            ByteString audioBytes = ByteString.copyFrom(file.getBytes());
+            ByteString audioBytes = ByteString.copyFrom(word);
 
             // JSON 요청 본문 생성
             Map<String, Object> audioConfigMap = new HashMap<>();
-            audioConfigMap.put("encoding", "LINEAR16");
+            audioConfigMap.put("encoding", "FLAC");
             audioConfigMap.put("languageCode", "ko-KR");
             audioConfigMap.put("sampleRateHertz", 16000);
 
@@ -341,13 +343,10 @@ public byte[] synthesizeText(String text) throws IOException {
                 JsonNode jsonResponse = objectMapper.readTree(response.getBody());
                 JsonNode results = jsonResponse.get("results");
 
-                if (results.isArray()) {
-                    for (JsonNode result : results) {
-                        JsonNode alternatives = result.get("alternatives");
-                        if (alternatives.isArray()) {
-                            JsonNode alternative = alternatives.get(0);
-                            resultText += alternative.get("transcript").asText() + " ";
-                        }
+                if (results.isArray() && results.size() > 0) {
+                    JsonNode alternatives = results.get(0).get("alternatives");
+                    if (alternatives.isArray() && alternatives.size() > 0) {
+                        resultText = alternatives.get(0).path("transcript").asText();
                     }
                 }
             }
@@ -357,5 +356,39 @@ public byte[] synthesizeText(String text) throws IOException {
             throw new RuntimeException(e);
         }
     }
+
 */
+    public String speechKeyword(byte[] word) {
+
+        String resultText = "";
+
+        try {
+            //SpeechClient인스턴스 생성
+            SpeechClient speechClient = SpeechClient.create();
+
+            //음성 인식 요청의 구성을 설정(오디오 인코딩, 언어 코드, 샘플 레이트 등)
+            RecognitionConfig config = RecognitionConfig.newBuilder()
+                    .setEncoding(AudioEncoding.MP3)
+                    .setLanguageCode("ko-KR")
+                    .setSampleRateHertz(44100)
+                    .build();
+
+            //음성 인식 요청에 사용할 오디오 데이터를 설정
+            RecognitionAudio audio = RecognitionAudio.newBuilder()
+                    .setContent(ByteString.copyFrom(word))
+                    .build();
+
+            //Google Cloud Speech-to-Text API를 호출하고, 응답받음
+            RecognizeResponse response = speechClient.recognize(config, audio);
+
+            List<SpeechRecognitionResult> results = response.getResultsList();
+
+            if (!response.getResultsList().isEmpty()) {
+                resultText = response.getResultsList().get(0).getAlternativesList().get(0).getTranscript();
+            }
+            return resultText;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

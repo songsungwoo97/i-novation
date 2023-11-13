@@ -3,7 +3,7 @@ spring:
     url: jdbc:mariadb://i-novation.cvkt2esm45yw.ap-northeast-2.rds.amazonaws.com:3306/i_novation
     username: song
     password: snrn0412
-    driver-Class-Name: org.mariadb.jdbc.Driver
+    driver-class-name: org.mariadb.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: create
