@@ -10,10 +10,16 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
-public class
-Keyword {
+public class Keyword {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "keyword_id")
     private Long id;
+
+    private String keyword;
+
+    public Keyword(String keyword) {
+
+        this.keyword = keyword;
+    }
 }

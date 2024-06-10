@@ -3,16 +3,11 @@ package com.example.inovation.service;
 import com.example.inovation.domain.Member;
 import com.example.inovation.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -24,7 +19,7 @@ public class MemberService {
 
     /*회원 가입*/
     @Transactional
-    public Long join(Member member) {
+    public UUID join(Member member) {
 
         validateDuplicateMember(member);
         memberRepository.save(member);
