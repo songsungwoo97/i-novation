@@ -72,7 +72,7 @@ class NewsServiceTest {
 
     @Test
     public void STT_REST() throws IOException {
-        Path path = Paths.get("C:/Users/USER_20211214/Desktop/test.mp3");
+        Path path = Paths.get("C:/Users/USER_20211214/Desktop/sound/test.mp3");
 
         String resultText = "";
 
@@ -135,8 +135,8 @@ class NewsServiceTest {
     }
 
     @Test
-    public void 크롤링() throws IOException {
-        String link = "https://n.news.naver.com/mnews/article/011/0004190069?sid=101";
+    public void 크롤링_음성출력() throws IOException {
+        String link = "https://n.news.naver.com/mnews/article/022/0003872395?sid=100";
         String text = newsService.crawlNewsBody(link);
         System.out.println(text);
 

@@ -29,7 +29,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.jsoup:jsoup:1.15.3'
-	//implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	//reds
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 	//google API
 	implementation 'com.google.cloud:google-cloud-speech:4.15.0'

@@ -1,5 +1,7 @@
 package com.example.inovation.controller.form;
 
+import org.hibernate.annotations.Cache;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,5 +9,5 @@ import lombok.Setter;
 @Setter
 public class NewsSearchForm {
 
-    private String keyword;
+	private String keyword;
 }

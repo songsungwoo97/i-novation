@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:mariadb://i-novation.cvkt2esm45yw.ap-northeast-2.rds.amazonaws.com:3306/i_novation
-    username: song
-    password: snrn0412
-    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/world
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: create
@@ -11,10 +11,11 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
-
+  logging:
+    charset:
+      console: UTF-8
 naver:
   api:
     clientId: 5_6vnGOcaeUbwJbdyF1q
     clientSecret: s034WsHYTi
-
 

@@ -5,6 +5,7 @@ import com.example.inovation.controller.form.Search;
 import com.example.inovation.service.NewsService;
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/news")
 @RequiredArgsConstructor
@@ -36,8 +38,8 @@ public class NewsController {
 
     private final NewsService newsService;
 
-@PostMapping(value = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}) //음성(bytearray)으로 키워드 검색
-public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile file) throws IOException {
+/*@PostMapping(value = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}) //음성(bytearray)으로 키워드 검색
+public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile file) throws Exception {
     //Base64 디코딩을 통해 바이트 배열로 변환
     byte[] word = Base64.getDecoder().decode(file.getBytes());
 
@@ -53,12 +55,13 @@ public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile f
         System.out.println("결과가 없습니다.");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
-}
+}*/
 
 
-    @PostMapping("/v1-search")  //키워드 검색
-    public ResponseEntity<List<ArticleForm>> v1newsSearch(@RequestBody NewsSearchForm form) throws IOException {
+    @GetMapping("/search")  //키워드 검색
+    public ResponseEntity<List<ArticleForm>> v1newsSearch(@RequestBody NewsSearchForm form) throws Exception {
 
+        log.info("1.", form.getKeyword());
         List<ArticleForm> newsList = newsService.searchNaverNews(form.getKeyword(), 10);
         if (!newsList.isEmpty()) {
             return ResponseEntity.ok(newsList);
@@ -67,13 +70,13 @@ public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile f
         }
     }
 
-    @PostMapping("/popularnews") //인기뉴스
+    @GetMapping("/popularnews") //인기뉴스
     public ResponseEntity<List<NewsForm>> popularNews() throws IOException {
 
         return ResponseEntity.ok(newsService.getPopularNews());
     }
 
-    @PostMapping("/articles")
+    @GetMapping("/articles")
     public ResponseEntity<byte[]> receiveArticle(@RequestBody Map<String, String> requestBody) {
         String link = requestBody.get("link"); //
 

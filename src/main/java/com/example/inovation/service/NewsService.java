@@ -1,6 +1,5 @@
 package com.example.inovation.service;
 
-import com.example.inovation.service.Error.NewsApiException;
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,19 +10,22 @@ import com.google.protobuf.ByteString;
 import com.google.cloud.speech.v1p1beta1.RecognitionConfig.AudioEncoding;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 @Transactional(readOnly = true)
 public class NewsService {
 
@@ -42,64 +45,103 @@ public class NewsService {
     @Value("${naver.api.clientSecret}")
     private String clientSecret;
 
-    //private final NewsRepository newsRepository;
-
-    private final RestTemplate restTemplate;
-    //private final WebClient webClient; //RestTemplate 대신 사용하기
-
-
-    @Configuration
-    public static class RestTemplateConfig {
-        @Bean
-        public RestTemplate restTemplate() {
-            return new RestTemplate();
-        }
-    }
+    private final WebClient webClient; //RestTemplate 대신 사용하기
 
     //뉴스검색 api를 사용하여
-    @Transactional
+/*    @Transactional
     public List<ArticleForm> searchNaverNews(String query, int size) throws IOException {
         // news_office_code를 추가하여 네이버 뉴스 기사만 검색합니다.
-        String url = "https://openapi.naver.com/v1/search/news.json?query=" + query + "&display=" + size;
-        HttpHeaders headers = new HttpHeaders();
+        String uri = "https://openapi.naver.com/v1/search/news.json?query=" + query + "&display=" + size;
+        *//*HttpHeaders headers = new HttpHeaders();
         headers.set("X-Naver-Client-Id", clientId);
         headers.set("X-Naver-Client-Secret", clientSecret);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);*//*
 
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class, query, size);
+        JsonNode response = webClient.get()
+            .uri(uri)
+            .header("X-Naver-Client-Id", clientId)
+            .header("X-Naver-Client-Secret", clientSecret)
+            .retrieve()
+            .toEntity(JsonNode.class)
+            .block().getBody();
 
-        if (response.getStatusCode() == HttpStatus.OK) {
-            List<ArticleForm> articles = new ArrayList<>();
-            JsonNode items = Objects.requireNonNull(response.getBody()).get("items");
+        //ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class, query, size);
 
-            if (items.isArray()) {
-                for (JsonNode item : items) {
-                    String title = item.get("title").asText();
-                    String link = item.get("link").asText();
-                    String description = item.get("description").asText();
+        List<ArticleForm> articles = new ArrayList<>();
+        JsonNode items = response.get("items");
 
-                    title = Jsoup.clean(title, Safelist.none()); //HTML 태그 정리
-                    description = Jsoup.clean(description, Safelist.none());
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                String title = item.get("title").asText();
+                String link = item.get("link").asText();
+                String description = item.get("description").asText();
 
-                    if (isNaverNewsLink(link)) {
-                        String thumbnail = getThumbnailFromLink(link);
-                        ArticleForm articleForm = new ArticleForm(title, link, description, thumbnail);
-                        articles.add(articleForm);
-                    }
+                title = Jsoup.clean(title, Safelist.none()); //HTML 태그 정리
+                description = Jsoup.clean(description, Safelist.none());
+
+                if (isNaverNewsLink(link)) {
+                    String thumbnail = getThumbnailFromLink(link);
+                    ArticleForm articleForm = new ArticleForm(title, link, description, thumbnail);
+                    articles.add(articleForm);
                 }
             }
-
-            return articles;
-        } else {
-            throw new NewsApiException((HttpStatus) response.getStatusCode());
         }
+
+        return articles;
+    }*/
+    public List<ArticleForm> searchNaverNews(String query, int size) throws Exception {
+
+        String encodedQuery = UriComponentsBuilder.fromUriString(query)
+                .build()
+                .encode()
+                .toUriString();
+
+        String uri = "https://openapi.naver.com/v1/search/news.json?query=" + encodedQuery + "&display=" + size;
+        log.info("--------------uri 생성--------------");
+        log.info("2.", query);
+        JsonNode response = sendNaverNewsRequest(uri).getBody();
+        log.info("3.", query);
+        log.info("--------------네이버 통신--------------");
+        return extractArticlesFromResponse(response);
     }
+
+    private ResponseEntity<JsonNode> sendNaverNewsRequest(String uri) {
+        return webClient.get()
+            .uri(uri)
+            .header("X-Naver-Client-Id", clientId)
+            .header("X-Naver-Client-Secret", clientSecret)
+            .retrieve()
+            .toEntity(JsonNode.class)
+            .block();
+    }
+
+    private List<ArticleForm> extractArticlesFromResponse(JsonNode response) throws Exception {
+        List<ArticleForm> articles = new ArrayList<>();
+        JsonNode items = response.get("items");
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                String title = cleanText(item.get("title").toString());
+                String link = item.get("link").asText();
+                String description = cleanText(item.get("description").asText());
+                if (isNaverNewsLink(link)) {
+                    String thumbnail = getThumbnailFromLink(link);
+                    articles.add(new ArticleForm(title, link, description, thumbnail));
+                }
+            }
+        }
+        return articles;
+    }
+
+    private String cleanText(String text) {
+        return Jsoup.clean(text, Safelist.none());
+    }
+
     //네이버 뉴스인지 찾아주는 함수
     private boolean isNaverNewsLink(String link) {
         return link.contains("news.naver.com");
     }
     //썸네일을 크롤링해주는 함수
-    private String getThumbnailFromLink(String link) throws IOException {
+    private String getThumbnailFromLink(String link) throws Exception {
         Document doc = Jsoup.connect(link).get();
         Element imageElement = doc.selectFirst("meta[property=og:image]");
         return imageElement != null ? imageElement.attr("content") : "";
@@ -138,7 +180,7 @@ public class NewsService {
     }
 
 
-//TTS 구현
+    //TTS 구현
     public String crawlNewsBody(String url) {
         try {
             Document doc = Jsoup.connect(url).get();
