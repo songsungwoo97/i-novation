@@ -3,7 +3,6 @@ package com.example.inovation.service;
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.speech.v1p1beta1.*;
 import com.google.cloud.texttospeech.v1.*;
 import com.google.protobuf.ByteString;
@@ -16,14 +15,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -98,9 +93,9 @@ public class NewsService {
 
         String uri = "https://openapi.naver.com/v1/search/news.json?query=" + encodedQuery + "&display=" + size;
         log.info("--------------uri 생성--------------");
-        log.info("2.", query);
+        log.info("2." + query);
         JsonNode response = sendNaverNewsRequest(uri).getBody();
-        log.info("3.", query);
+        log.info("3." + query);
         log.info("--------------네이버 통신--------------");
         return extractArticlesFromResponse(response);
     }
@@ -120,7 +115,7 @@ public class NewsService {
         JsonNode items = response.get("items");
         if (items.isArray()) {
             for (JsonNode item : items) {
-                String title = cleanText(item.get("title").toString());
+                String title = cleanText(item.get("title").asText());
                 String link = item.get("link").asText();
                 String description = cleanText(item.get("description").asText());
                 if (isNaverNewsLink(link)) {
@@ -165,7 +160,7 @@ public class NewsService {
                 Element linkElement = listElement.select(".list_content a.list_title").first();
 
                 String title = linkElement.text();
-                title = Jsoup.clean(title, Safelist.none()); //HTML 태그 정리
+                title = cleanText(title); //HTML 태그 정리
 
                 String link = linkElement.attr("href");
                 Element thumbnailElement = listElement.select("a.list_img img").first();
@@ -190,12 +185,25 @@ public class NewsService {
             // 사진설명 제거
             newsBodyElements.select(".end_photo_org").remove();
 
-            // 뉴스의 본문을 추출
-            return newsBodyElements.text();
+            // 기자 정보 제거
+            //newsBodyElements.select(".byline_s").remove();
 
+            // 뉴스 본문을 추출하고 공백을 제거
+            String newsBody = newsBodyElements.text().trim();
+
+            // 빈 문자열인 경우 null 반환
+            if (newsBody.isEmpty()) {
+                return null;
+            }
+
+            return newsBody;
+
+        } catch (IOException e) {
+            log.error("URL 접속 중 에러 발생", e);
+            return null;
         } catch (Exception e) {
-            e.printStackTrace();
-            return "본문을 추출할 수 없음.";
+            log.error("크롤링 중 에러 발생", e);
+            return null;
         }
     }
 

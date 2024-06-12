@@ -1,4 +1,8 @@
 spring:
+  redis:
+    data:
+      host: localhost
+      port: 6379
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/world
     username: root
@@ -12,10 +16,14 @@ spring:
         format_sql: true
     show-sql: true
   logging:
-    charset:
-      console: UTF-8
+    level:
+      root: DEBUG
+      org.springframework.web: DEBUG
+      org.springframework.security: INFO
 naver:
   api:
     clientId: 5_6vnGOcaeUbwJbdyF1q
     clientSecret: s034WsHYTi
 
+jwt:
+  secretKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c

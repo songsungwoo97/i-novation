@@ -5,21 +5,28 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.Email;
+import lombok.*;
+
+import javax.annotation.Nullable;
 
 @Entity
 @Getter @Setter
-public class Member extends BaseTimeEntity {
+@NoArgsConstructor
+@RequiredArgsConstructor
+@AllArgsConstructor
+public class User extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "member_id")
     private Long id;
+
+    @Email
     private String email;
+
+    @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
     private String name;
 
-    public Member() {
-    }
 }

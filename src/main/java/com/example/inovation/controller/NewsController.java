@@ -61,7 +61,7 @@ public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile f
     @GetMapping("/search")  //키워드 검색
     public ResponseEntity<List<ArticleForm>> v1newsSearch(@RequestBody NewsSearchForm form) throws Exception {
 
-        log.info("1.", form.getKeyword());
+        log.info("1." + form.getKeyword());
         List<ArticleForm> newsList = newsService.searchNaverNews(form.getKeyword(), 10);
         if (!newsList.isEmpty()) {
             return ResponseEntity.ok(newsList);

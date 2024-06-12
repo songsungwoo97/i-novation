@@ -1,6 +1,6 @@
 package com.example.inovation.service;
 
-import com.example.inovation.domain.Member;
+import com.example.inovation.domain.User;
 import com.example.inovation.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,35 +12,35 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Service
 @Transactional(readOnly = true)
-public class MemberService {
+public class UserService {
 
     private final MemberRepository memberRepository;
 
 
     /*회원 가입*/
     @Transactional
-    public UUID join(Member member) {
+    public Long join(User user) {
 
-        validateDuplicateMember(member);
-        memberRepository.save(member);
+        validateDuplicateMember(user);
+        memberRepository.save(user);
 
-        return member.getId();
+        return user.getId();
     }
 
     /*로그인*/
 
-    public Member login(String email, String password) {
-        Member member = memberRepository.findByEmailAndPassword(email, password);
-        if(member == null) return null;
+    public User login(String email, String password) {
+        User user = memberRepository.findByEmailAndPassword(email, password);
+        if(user == null) return null;
 
-        return member;
+        return user;
     }
 
 
     /*중복 확인*/
-    private void validateDuplicateMember(Member member) {
-        List<Member> findMembers = memberRepository.findByEmail(member.getEmail());
-        if (!findMembers.isEmpty()) {
+    private void validateDuplicateMember(User user) {
+        List<User> findUsers = memberRepository.findByEmail(user.getEmail());
+        if (!findUsers.isEmpty()) {
             throw new IllegalStateException("이미 존재하는 회원입니다.");
         }
     }
