@@ -3,6 +3,8 @@ package com.example.inovation.service;
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.speech.v1p1beta1.*;
 import com.google.cloud.texttospeech.v1.*;
 import com.google.protobuf.ByteString;
@@ -25,7 +27,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 
 @RequiredArgsConstructor
@@ -40,50 +42,11 @@ public class NewsService {
     @Value("${naver.api.clientSecret}")
     private String clientSecret;
 
+    @Value("${google.apiKey}")
+    private String googleKey;
+
     private final WebClient webClient; //RestTemplate 대신 사용하기
 
-    //뉴스검색 api를 사용하여
-/*    @Transactional
-    public List<ArticleForm> searchNaverNews(String query, int size) throws IOException {
-        // news_office_code를 추가하여 네이버 뉴스 기사만 검색합니다.
-        String uri = "https://openapi.naver.com/v1/search/news.json?query=" + query + "&display=" + size;
-        *//*HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Naver-Client-Id", clientId);
-        headers.set("X-Naver-Client-Secret", clientSecret);
-        HttpEntity<Void> entity = new HttpEntity<>(headers);*//*
-
-        JsonNode response = webClient.get()
-            .uri(uri)
-            .header("X-Naver-Client-Id", clientId)
-            .header("X-Naver-Client-Secret", clientSecret)
-            .retrieve()
-            .toEntity(JsonNode.class)
-            .block().getBody();
-
-        //ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class, query, size);
-
-        List<ArticleForm> articles = new ArrayList<>();
-        JsonNode items = response.get("items");
-
-        if (items.isArray()) {
-            for (JsonNode item : items) {
-                String title = item.get("title").asText();
-                String link = item.get("link").asText();
-                String description = item.get("description").asText();
-
-                title = Jsoup.clean(title, Safelist.none()); //HTML 태그 정리
-                description = Jsoup.clean(description, Safelist.none());
-
-                if (isNaverNewsLink(link)) {
-                    String thumbnail = getThumbnailFromLink(link);
-                    ArticleForm articleForm = new ArticleForm(title, link, description, thumbnail);
-                    articles.add(articleForm);
-                }
-            }
-        }
-
-        return articles;
-    }*/
     public List<ArticleForm> searchNaverNews(String query, int size) throws Exception {
 
         String encodedQuery = UriComponentsBuilder.fromUriString(query)
@@ -92,10 +55,8 @@ public class NewsService {
                 .toUriString();
 
         String uri = "https://openapi.naver.com/v1/search/news.json?query=" + encodedQuery + "&display=" + size;
-        log.info("--------------uri 생성--------------");
-        log.info("2." + query);
+
         JsonNode response = sendNaverNewsRequest(uri).getBody();
-        log.info("3." + query);
         log.info("--------------네이버 통신--------------");
         return extractArticlesFromResponse(response);
     }
@@ -210,84 +171,45 @@ public class NewsService {
     public byte[] synthesizeText(String text) throws IOException {
         int maxTextLength = 100; //1000개로 하면 오류 발생
         List<String> textChunk = splitTextIntoChunks(text, maxTextLength); //문자열을 1000개 단위로 나누고 리스트에 저장
-        List<byte[]> audioDataList = new ArrayList<>();
+        //List<byte[]> audioDataList = new ArrayList<>();
+        List<CompletableFuture<byte[]>> futures = new ArrayList<>();
 
         //TTS 사용(클라이언트 생성)
-        try {
-            for (String chunk : textChunk) {
-                TextToSpeechClient client = TextToSpeechClient.create();
-                VoiceSelectionParams voice = VoiceSelectionParams.newBuilder() //음성파라미터를 설정
-                        .setLanguageCode("ko-KR")
-                        .build();
-
-                AudioConfig audioConfig = AudioConfig.newBuilder() //오디오의 인코딩 형식을 지정
-                        .setAudioEncoding(com.google.cloud.texttospeech.v1.AudioEncoding.MP3)
-                        .build();
-
-                SynthesisInput input = SynthesisInput.newBuilder() //TTS엔진에 전달할 텍스트입력 설정
-                        .setText(chunk)
-                        .build();
-
-                SynthesizeSpeechResponse response = client.synthesizeSpeech(input, voice, audioConfig); //TTS클라이언트에 음성 합성 요청을 보냄
-                ByteString audioData = response.getAudioContent(); //오디오 데이터를 가져옴
-                audioDataList.add(audioData.toByteArray());
-
-                client.shutdown();
+        for (String chunk : textChunk) {
+            CompletableFuture<byte[]> future = CompletableFuture.supplyAsync(() -> {
                 try {
-                    if (!client.awaitTermination(800, TimeUnit.MILLISECONDS)) { //시간 제한이 도달하면 포기
-                        System.out.println("Timeout");
-                        client.shutdownNow(); //기존 호출과 새로운 호출이 취소되는 강제 종료를 시작합니다.
-                    }
-                } catch (InterruptedException e) {
-                    System.out.println("Shutdown error");
-                    client.shutdownNow();
+                    TextToSpeechClient client = TextToSpeechClient.create();
+                    VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
+                            .setLanguageCode("ko-KR")
+                            .setSsmlGender(SsmlVoiceGender.NEUTRAL)
+                            .build();
+
+                    AudioConfig audioConfig = AudioConfig.newBuilder()
+                            .setAudioEncoding(com.google.cloud.texttospeech.v1.AudioEncoding.MP3)
+                            .build();
+
+                    SynthesisInput input = SynthesisInput.newBuilder()
+                            .setText(chunk)
+                            .build();
+
+                    SynthesizeSpeechResponse response = client.synthesizeSpeech(input, voice, audioConfig);
+                    ByteString audioData = response.getAudioContent();
+                    client.shutdown();
+                    return audioData.toByteArray();
+                } catch (Exception e) {
+                    System.out.println("Error: " + e.getMessage());
+                    return null;
                 }
-            }
-
-        } catch (Exception e) {
-            System.out.println("inner");
-            System.out.println(e);
+            });
+            futures.add(future);
         }
-        return mergeAudioData(audioDataList); //리스트를 하나의 배열로 병합
+        List<byte[]> audioDataList = futures.stream()
+                .map(CompletableFuture::join)
+                .filter(Objects::nonNull)
+                .toList();
+
+        return mergeAudioData(audioDataList);
     }
-/*
-public byte[] synthesizeText(String text) throws IOException {
-    int maxTextLength = 100;
-    List<String> textChunk = splitTextIntoChunks(text, maxTextLength);
-    List<byte[]> audioDataList = new ArrayList<>();
-
-    String apiKey = "AIzaSyD4aQkvI-_O9flNES20RTR3UYzgJDNKoAw";
-    for (String chunk : textChunk) {
-        try {
-            String url = String.format("https://texttospeech.googleapis.com/v1/text:synthesize?key=%s", apiKey);
-            RestTemplate restTemplate = new RestTemplate();
-
-            // HTTP 요청 본문을 구성합니다.
-            Map<String, Object> requestMap = new HashMap<>();
-            requestMap.put("input", Map.of("text", chunk));
-            requestMap.put("voice", Map.of("languageCode", "ko-KR"));
-            requestMap.put("audioConfig", Map.of("audioEncoding", "MP3"));
-
-            // API에 HTTP POST 요청을 보냅니다.
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, requestMap, Map.class);
-
-            if (response.getStatusCode() == HttpStatus.OK) {
-                String audioContent = (String) response.getBody().get("audioContent");
-                byte[] audioData = Base64.getDecoder().decode(audioContent);
-                audioDataList.add(audioData);
-            } else {
-                System.out.println("Error: " + response.getStatusCode());
-            }
-        } catch (Exception e) {
-            System.out.println("inner");
-            System.out.println(e);
-        }
-    }
-
-    return mergeAudioData(audioDataList);
-}
-*/
-
 
     private byte[] mergeAudioData(List<byte[]> audioDataList) throws IOException {//음성 데이터를 List에서 하나의 배열로 병합
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -310,104 +232,7 @@ public byte[] synthesizeText(String text) throws IOException {
 
         return chunks;
     }
-    /*#################################################################################################*/
 
-
-    //음성인식 구현
-    /*
-    public String speechKeyword(MultipartFile file) {
-
-        String resultText = "";
-
-        try {
-            //클라이언트 인스턴스화
-            SpeechClient speechClient = SpeechClient.create();
-
-            //음성파일을 바이트코드로 변환
-            ByteString audioBytes = ByteString.copyFrom(file.getBytes());
-
-            //음성 인식 요청의 구성을 설정(오디오 인코딩, 언어 코드, 샘플 레이트 등)
-            RecognitionConfig config = RecognitionConfig.newBuilder()
-                    .setEncoding(AudioEncoding.MP3)
-                    .setLanguageCode("ko-KR")
-                    .setSampleRateHertz(44100)
-                    .build();
-
-            //음성 인식 요청에 사용할 오디오 데이터를 설정
-            RecognitionAudio audio = RecognitionAudio.newBuilder()
-                    .setContent(audioBytes)
-                    .build();
-
-            //Google Cloud Speech-to-Text API를 호출하고, 응답받음
-            RecognizeResponse response = speechClient.recognize(config, audio);
-
-            List<SpeechRecognitionResult> results = response.getResultsList();
-
-            for (SpeechRecognitionResult result : results) {
-                //가장 근접한 값을 저장
-                SpeechRecognitionAlternative alternative = result.getAlternativesList().get(0);
-                resultText += alternative.getTranscript();
-            }
-            return resultText;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-*/
-/*
-    //매개변수 : 바이트코드
-    public String speechKeyword(byte[] word) {
-        String resultText = "";
-        String apiKey = "AIzaSyD4aQkvI-_O9flNES20RTR3UYzgJDNKoAw";
-        try {
-            //요청을 보낼 url 생성
-            String url = String.format("https://speech.googleapis.com/v1/speech:recognize?key=%s", apiKey);
-
-            // 음성 파일을 바이트 코드로 변환
-            ByteString audioBytes = ByteString.copyFrom(word);
-
-            // JSON 요청 본문 생성
-            Map<String, Object> audioConfigMap = new HashMap<>();
-            audioConfigMap.put("encoding", "FLAC");
-            audioConfigMap.put("languageCode", "ko-KR");
-            audioConfigMap.put("sampleRateHertz", 16000);
-
-            Map<String, Object> audioMap = new HashMap<>();
-            audioMap.put("content", audioBytes.toStringUtf8());
-
-            Map<String, Object> requestMap = new HashMap<>();
-            requestMap.put("config", audioConfigMap);
-            requestMap.put("audio", audioMap);
-
-            // RestTemplate을 사용하여 HTTP POST 요청 보내기
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestMap, headers);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-
-            // 응답 JSON 파싱하여 결과 텍스트 얻기
-            if (response.getStatusCode() == HttpStatus.OK) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode jsonResponse = objectMapper.readTree(response.getBody());
-                JsonNode results = jsonResponse.get("results");
-
-                if (results.isArray() && results.size() > 0) {
-                    JsonNode alternatives = results.get(0).get("alternatives");
-                    if (alternatives.isArray() && alternatives.size() > 0) {
-                        resultText = alternatives.get(0).path("transcript").asText();
-                    }
-                }
-            }
-
-            return resultText.trim();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-*/
     public String speechKeyword(byte[] word) {
 
         String resultText = "";
