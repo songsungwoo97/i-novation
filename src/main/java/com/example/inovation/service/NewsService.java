@@ -42,9 +42,6 @@ public class NewsService {
     @Value("${naver.api.clientSecret}")
     private String clientSecret;
 
-    @Value("${google.apiKey}")
-    private String googleKey;
-
     private final WebClient webClient; //RestTemplate 대신 사용하기
 
     public List<ArticleForm> searchNaverNews(String query, int size) throws Exception {

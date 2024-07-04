@@ -21,7 +21,7 @@
   - Micrometer는 이런 메트릭을 수집하기 위한 표준화된 방법을 제공합니다. 개발자는 Micrometer가 제공하는 API를 사용해서 애플리케이션 코드 내에 메트릭 수집 로직을 삽입할 수 있습니다. 그러면 Micrometer가 해당 메트릭 정보를 수집하고 외부로 전송합니다.
     이때 Micrometer는 메트릭 정보를 전송할 대상 시스템을 추상화하고 있습니다. 따라서 개발자는 애플리케이션 코드를 수정하지 않고도, Micrometer와 연동할 모니터링 시스템을 자유롭게 변경할 수 있습니다. Micrometer는 **Prometheus**, Atlas, Datadog 등 다양한 모니터링 시스템을 지원하고 있습니다.
 - ## 그라파나
-
+![img_3.png](img_3.png)
 
 ![img_2.png](img_2.png)
 
@@ -79,4 +79,6 @@ TokenProvider를 사용하여 JWT 토큰의 유효성을 검사합니다.
 인증된 사용자 정보를 가지고 요청을 다음 필터로 전달하고, 최종적으로 컨트롤러에서 처리됩니다.
 
 이렇게 TokenProvider, JwtAuthenticationFilter, SecurityConfig 클래스들이 상호 작용하여 JWT 토큰 기반의 인증 및 인가 프로세스를 구현합니다.
+
+# CI/CD: Git Action + AWS EC2
 # 도커에 올리기
