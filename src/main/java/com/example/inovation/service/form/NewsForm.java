@@ -19,12 +19,4 @@ public class NewsForm {
         this.image = image;
     }
 
-    public News toEntity() {
-
-        return News.builder()
-                .title(title)
-                .url(url)
-                .image(image)
-                .build();
-    }
 }

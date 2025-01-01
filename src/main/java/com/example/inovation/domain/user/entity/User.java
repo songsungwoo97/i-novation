@@ -1,5 +1,6 @@
-package com.example.inovation.domain;
+package com.example.inovation.domain.user.entity;
 
+import com.example.inovation.domain.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,19 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Entity
 @Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,8 +26,14 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false)
     private String name;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @Enumerated(EnumType.STRING)
-    private List<UserType> roles;
+    @Enumerated(EnumType.STRING) //enum 타입을 String으로 명시(0, 1이 아닌)
+    private UserRoleType role;
 
+    @Builder
+    public User(String email, String password, String name) {
+        this.email = email;
+        this.password = password;
+        this.name = name;
+        this.role = UserRoleType.USER;
+    }
 }

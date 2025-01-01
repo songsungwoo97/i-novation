@@ -1,10 +1,8 @@
-package com.example.inovation.service;
+package com.example.inovation.domain.news.service;
 
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.speech.v1p1beta1.*;
 import com.google.cloud.texttospeech.v1.*;
 import com.google.protobuf.ByteString;

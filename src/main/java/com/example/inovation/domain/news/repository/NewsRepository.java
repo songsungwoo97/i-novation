@@ -1,7 +1,6 @@
-package com.example.inovation.repository;
+package com.example.inovation.domain.news.repository;
 
 import com.example.inovation.domain.News;
-import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

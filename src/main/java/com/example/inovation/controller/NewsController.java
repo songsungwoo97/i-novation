@@ -2,7 +2,7 @@ package com.example.inovation.controller;
 
 import com.example.inovation.controller.form.LinkRequestDto;
 import com.example.inovation.controller.form.NewsSearchForm;
-import com.example.inovation.service.NewsService;
+import com.example.inovation.domain.news.service.NewsService;
 import com.example.inovation.service.form.ArticleForm;
 import com.example.inovation.service.form.NewsForm;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController

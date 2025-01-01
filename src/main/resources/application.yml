@@ -26,39 +26,8 @@ naver:
     clientSecret: s034WsHYTi
 
 jwt:
-  secretKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+  secret: c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LXR1dG9yaWFsLWppd29vbi1zcHJpbmctYm9vdC1zZWN1cml0eS1qd3QtdHV0b3JpYWwK
 
-#설정을 통해 더 다양한 정보들을 제공 받을 수 있습니다.
-
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: "*"
-#  endpoint:
-#    shutdown:
-#      enabled: true
-
-#health, info만 노출
-#management:
-#  endpoints:
-#    jmx:
-#      exposure:
-#        include: "health,info"
-
-# env, beans를 제회라고 전부 노출
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: "*"
-#        exclude: "env,beans"
-
-# health의 상세정보
-#management:
-#  endpoint:
-#    health:
-#      show-details: always
 
 management:
   endpoints:
