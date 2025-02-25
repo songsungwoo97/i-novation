@@ -43,13 +43,13 @@ public class UserController {
 
     //로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
-        // 현재 인증된 사용자의 세션 가져오기
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null) {
-            // 로그아웃 처리
-            new SecurityContextLogoutHandler().logout(request, response, auth);
-        }
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
+        // Bearer 제거
+        token = token.substring(7);
+
+        // 토큰 블랙리스트에 추가
+        userService.addToBlackList(token);
+
+        return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 }

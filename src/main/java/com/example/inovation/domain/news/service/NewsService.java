@@ -1,7 +1,8 @@
 package com.example.inovation.domain.news.service;
 
-import com.example.inovation.service.form.ArticleForm;
-import com.example.inovation.service.form.NewsForm;
+
+import com.example.inovation.domain.news.dto.ArticleDto;
+import com.example.inovation.domain.news.dto.NewsForm;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.cloud.speech.v1p1beta1.*;
 import com.google.cloud.texttospeech.v1.*;
@@ -42,7 +43,7 @@ public class NewsService {
 
     private final WebClient webClient; //RestTemplate 대신 사용하기
 
-    public List<ArticleForm> searchNaverNews(String query, int size) throws Exception {
+    public List<ArticleDto> searchNaverNews(String query, int size) throws Exception {
 
         String encodedQuery = UriComponentsBuilder.fromUriString(query)
                 .build()
@@ -66,8 +67,8 @@ public class NewsService {
             .block();
     }
 
-    private List<ArticleForm> extractArticlesFromResponse(JsonNode response) throws Exception {
-        List<ArticleForm> articles = new ArrayList<>();
+    private List<ArticleDto> extractArticlesFromResponse(JsonNode response) throws Exception {
+        List<ArticleDto> articles = new ArrayList<>();
         JsonNode items = response.get("items");
         if (items.isArray()) {
             for (JsonNode item : items) {
@@ -75,8 +76,15 @@ public class NewsService {
                 String link = item.get("link").asText();
                 String description = cleanText(item.get("description").asText());
                 if (isNaverNewsLink(link)) {
-                    String thumbnail = getThumbnailFromLink(link);
-                    articles.add(new ArticleForm(title, link, description, thumbnail));
+                    String thumbnailUrl = getThumbnailFromLink(link);
+
+                    ArticleDto article = ArticleDto.builder()
+                            .title(title)
+                            .link(link)
+                            .description(description)
+                            .build();
+
+                    articles.add(article);
                 }
             }
         }
@@ -102,7 +110,7 @@ public class NewsService {
     public List<NewsForm> getPopularNews() throws IOException {
 
         //구글 뉴스
-        List<NewsForm> form = new ArrayList<>();
+        List<NewsForm> newsFormList  = new ArrayList<>();
 
         Document doc = Jsoup.connect("https://news.naver.com/main/ranking/popularDay.naver").get();
         Elements newsElements = doc.select(".rankingnews_box_wrap ._officeCard .rankingnews_box");
@@ -121,13 +129,21 @@ public class NewsService {
                 String link = linkElement.attr("href");
                 Element thumbnailElement = listElement.select("a.list_img img").first();
 
-                String url = thumbnailElement != null ? thumbnailElement.attr("src") : "no thumbnail";
+                String thumbnailUrl = thumbnailElement != null ? thumbnailElement.attr("src") : "no thumbnail";
 
-                form.add(new NewsForm(title, link, url));
+                // NewsForm 객체 생성 및 추가
+                NewsForm newsForm = NewsForm.builder()
+                        .title(title)
+                        .link(link)
+                        .description("")
+                        .thumbnailUrl(thumbnailUrl)// 미리보기 설명은 공백으로 설정
+                        .build();
+
+                newsFormList.add(newsForm);
             }
         }
 
-        return form;
+        return newsFormList;
     }
 
 

@@ -5,22 +5,36 @@ import com.example.inovation.domain.user.dto.SignUpRequestDto;
 import com.example.inovation.domain.user.dto.UserResponseDto;
 import com.example.inovation.domain.user.entity.User;
 import com.example.inovation.domain.user.repository.UserRepository;
+import com.example.inovation.exception.BaseException;
+import com.example.inovation.exception.BaseStatus;
+import com.example.inovation.jwt.JwtTokenProvider;
+import io.lettuce.core.RedisConnectionException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 @Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final CustomUserDetailsService userDetailsService;
+
+    private final RedisTemplate<String, String> redisTemplate;
+    private final JwtTokenProvider jwtTokenProvider;
 
 
     /*회원 가입*/
@@ -31,13 +45,10 @@ public class UserService {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
 
-        // 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
-
         // 유저 생성
         User user = User.builder()
                 .email(requestDto.getEmail())
-                .password(encodedPassword)
+                .password(passwordEncoder.encode(requestDto.getPassword())) // 암호화도 진행
                 .name(requestDto.getName())
                 .build();
 
@@ -52,7 +63,6 @@ public class UserService {
     }
 
     /*로그인*/
-
     @Transactional
     public String login(LoginRequestDto requestDto) {
         // UserDetails 조회
@@ -74,13 +84,26 @@ public class UserService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // JWT 토큰 생성 및 반환
-        return "Bearer " + jwtTokenProvider.createToken(authentication);
+        return jwtTokenProvider.createToken(authentication);
     }
 
-    private String generateToken(Authentication authentication) {
-        // JWT 토큰 생성 로직 구현
-        // (실제 구현은 JWT 라이브러리를 사용하여 구현)
-        return "jwt-token";
+    /*로그아웃*/
+    public void addToBlackList(String token) {
+        // 토큰의 남은 유효시간 계산
+        long expiration = jwtTokenProvider.getExpirationTime(token);
+
+        // Redis에 토큰을 블랙리스트로 등록
+        redisTemplate.opsForValue()
+                .set("blacklist:" + token, "logout", expiration, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean isTokenBlackListed(String token) {
+        try {
+            return redisTemplate.hasKey("blacklist:" + token);
+        } catch (RedisConnectionException e) {
+            log.error("Redis 서버 연결 실패", e);
+            throw new BaseException(BaseStatus.INTERNAL_SERVER_ERROR, "레디스 서버 연결 에러");
+        }
     }
 
 }

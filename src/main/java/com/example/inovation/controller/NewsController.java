@@ -1,10 +1,10 @@
 package com.example.inovation.controller;
 
-import com.example.inovation.controller.form.LinkRequestDto;
-import com.example.inovation.controller.form.NewsSearchForm;
+import com.example.inovation.domain.news.dto.ArticleDto;
+import com.example.inovation.domain.news.dto.LinkRequestDto;
+import com.example.inovation.domain.news.dto.NewsForm;
+import com.example.inovation.domain.news.dto.NewsSearchRequestDto;
 import com.example.inovation.domain.news.service.NewsService;
-import com.example.inovation.service.form.ArticleForm;
-import com.example.inovation.service.form.NewsForm;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,30 +24,38 @@ public class NewsController {
 
     private final NewsService newsService;
 
-/*@PostMapping(value = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}) //음성(bytearray)으로 키워드 검색
-public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile file) throws Exception {
-    //Base64 디코딩을 통해 바이트 배열로 변환
-    byte[] word = Base64.getDecoder().decode(file.getBytes());
 
-    //음성을 텍스트로 변환
-    //String keyword = newsService.speechKeyword(file.getBytes());
-    String keyword = newsService.speechKeyword(word);
+    /*@PostMapping(value = "/search", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    //음성(bytearray)으로 키워드 검색
+    public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile file) throws Exception {
+        //Base64 디코딩을 통해 바이트 배열로 변환
+        byte[] word = Base64.getDecoder().decode(file.getBytes());
 
-    System.out.println(keyword);
-    List<ArticleForm> newsList = newsService.searchNaverNews(keyword, 10);
-    if (!newsList.isEmpty()) {
-        return ResponseEntity.ok(newsList);
-    } else {
-        System.out.println("결과가 없습니다.");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    }
-}*/
+        //음성을 텍스트로 변환
+        //String keyword = newsService.speechKeyword(file.getBytes());
+        String keyword = newsService.speechKeyword(word);
 
+        System.out.println(keyword);
+        List<ArticleForm> newsList = newsService.searchNaverNews(keyword, 10);
+        if (!newsList.isEmpty()) {
+            return ResponseEntity.ok(newsList);
+        } else {
+            System.out.println("결과가 없습니다.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }*/
 
+    /**
+     * 키워드로 뉴스검색
+     *
+     * @return
+     * @throws Exception
+     */
     @GetMapping("/search")  //키워드 검색
-    public ResponseEntity<List<ArticleForm>> v1newsSearch(@RequestBody NewsSearchForm form) throws Exception {
+    public ResponseEntity<List<ArticleDto>> searchNewsByKeyword( @RequestParam String keyword,
+                                                                 @RequestParam(required = false, defaultValue = "20") int display) throws Exception {
 
-        List<ArticleForm> newsList = newsService.searchNaverNews(form.getKeyword(), 20);
+        List<ArticleDto> newsList = newsService.searchNaverNews(keyword, display);
         if (!newsList.isEmpty()) {
             return ResponseEntity.ok(newsList);
         } else {
@@ -55,20 +63,32 @@ public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile f
         }
     }
 
+    /**
+     * 인기뉴스 목록 조회
+     *
+     * @return
+     * @throws IOException
+     */
     @GetMapping("/popularnews") //인기뉴스
     public ResponseEntity<List<NewsForm>> popularNews() throws IOException {
 
         return ResponseEntity.ok(newsService.getPopularNews());
     }
 
-    @GetMapping("/articles")
-    public ResponseEntity<byte[]> receiveArticle(@RequestBody LinkRequestDto body) {
-        String link = body.getLink();
 
-        System.out.println(link);
+    /**
+     * 뉴스 본문을 음성으로 변환하여 반환
+     *
+     * @param
+     * @return
+     */
+    @GetMapping("/text-to-speech")
+    public ResponseEntity<?> receiveArticle(@RequestBody LinkRequestDto requestDto) {
+        String link = requestDto.getLink();
+
         // link가 비어있는 확인
-        if (link.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        if (link == null || link.isEmpty()) {
+            return ResponseEntity.badRequest().body("링크가 제공되지 않았습니다.");
         }
 
         // link가 제대로 구성되어 있는지 확인
@@ -81,14 +101,26 @@ public ResponseEntity<List<ArticleForm>> newsSearch(@RequestPart MultipartFile f
             String text = newsService.crawlNewsBody(link);
             byte[] sound = newsService.synthesizeText(text);
 
-            // 오디오를 바이트 배열로 반환
-            //return new ResponseEntity<>(sound, headers, HttpStatus.OK);
             return ResponseEntity.ok(sound);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("음성 변환 오류: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    /**
+     * 뉴스 링크를 통해 뉴스 상세 내용 크롤링
+     */
+    @PostMapping("/content")
+    public ResponseEntity<?> getNewsContent(@RequestBody LinkRequestDto requestDto) {
+        String link = requestDto.getLink();
+
+        if (link == null || link.isEmpty()) {
+            return ResponseEntity.badRequest().body("링크가 제공되지 않았습니다.");
+        }
+
+        String newsContent = newsService.crawlNewsBody(link);
+        return ResponseEntity.ok(newsContent);
+    }
 }
