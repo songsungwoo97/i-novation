@@ -17,7 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000") //CORS ERROR 해결
+@CrossOrigin(origins = "http://localhost:5173") //CORS ERROR 해결
 
 public class UserController {
 

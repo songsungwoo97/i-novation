@@ -3,7 +3,6 @@ package com.example.inovation.controller;
 import com.example.inovation.domain.news.dto.ArticleDto;
 import com.example.inovation.domain.news.dto.LinkRequestDto;
 import com.example.inovation.domain.news.dto.NewsForm;
-import com.example.inovation.domain.news.dto.NewsSearchRequestDto;
 import com.example.inovation.domain.news.service.NewsService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/news")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000") //CORS ERROR 해결
+@CrossOrigin(origins = "http://localhost:5173") //CORS ERROR 해결
 public class NewsController {
 
     private final NewsService newsService;
@@ -82,7 +81,7 @@ public class NewsController {
      * @param
      * @return
      */
-    @GetMapping("/text-to-speech")
+    @PostMapping("/text-to-speech")
     public ResponseEntity<?> receiveArticle(@RequestBody LinkRequestDto requestDto) {
         String link = requestDto.getLink();
 
