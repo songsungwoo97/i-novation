@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -48,7 +49,8 @@ public class SecurityConfig {
 
         // csrf 보안 비활성
         http.csrf(csrf -> csrf.disable())
-                        //세션 설정: JWT를 사용하므로 세션 사용 안 함
+                .cors(Customizer.withDefaults())  // 이 줄로 CORS 설정 적용
+                //세션 설정: JWT를 사용하므로 세션 사용 안 함
                         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // 접근 경로별 인가 설정
